@@ -1,6 +1,9 @@
 #!/bin/python3
 import curses # https://docs.python.org/3/howto/curses.html https://docs.python.org/3/library/curses.html
 import curses.textpad
+import logging # https://docs.python.org/3/howto/logging.html
+import lib.Config
+import lib.TNC
 
 def main(stdscr):
   stdscr.clear()
@@ -15,20 +18,38 @@ def main(stdscr):
   inputwin.border()
   inputwin.addstr(0, 2, "[Enter Message]")
   inputwin.refresh()
-  
+
   editwin = curses.newwin(1, curses.COLS - 2, curses.LINES - 2, 1)
   tb = curses.textpad.Textbox(editwin, insert_mode=True)
   #tb.edit()
   while True:
     ch = editwin.getch()
-    if ch == 27: break
-    elif ch == 10:
+    if ch == 27: break # ESC
+    elif ch == 10: # ENTER
       listwin.addstr(1, 1, "Test: " + tb.gather().strip())
       tb.do_command(curses.ascii.SOH)
       tb.do_command(curses.ascii.VT)
       #editwin.clear()
       listwin.refresh()
     else: tb.do_command(ch)
-  #curses.curs_set(False) # Hide cursor
+
+# Load config file:
+config = lib.Config.Config("PacketRadioMessenger.ini")
+
+# Initialize logger:
+loglevel = getattr(logging, config.getString("general", "loglevel", "WARNING").upper(), None)
+if not isinstance(loglevel, int):
+  print("Unknown log level in config! Use one of DEBUG, INFO, WARNING, ERROR, CRITICAL!")
+  exit(1)
+logging.basicConfig(filename=config.getString("general", "logfile", "PacketRadioMessenger.log"), format='%(asctime)s %(levelname)s: %(message)s', level=loglevel)
+logging.info("APP START")
+
+callsign = config.getCallsign()
+if len(callsign) == 0:
+  print("Please set callsign in config file!")
+  exit(1)
+
+tnc = lib.TNC.TNC(config)
 
 curses.wrapper(main)
+logging.info("APP EXIT")
