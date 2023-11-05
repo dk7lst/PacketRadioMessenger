@@ -9,7 +9,11 @@ class TNC7multi(SerialBase):
     logging.debug("Init class TNC7multi")
     super().__init__(config, section)
     self.kiss = KISS(config, section)
-    _thread.start_new_thread(SerialReceiveThread, ())
+    _thread.start_new_thread(self.SerialReceiveThread, ())
 
-  def SerialReceiveThread():
+  def __del__(self, config, section):
+    pass # TODO: Shutdown thread!
+
+  def SerialReceiveThread(self):
+    logging.debug("TNC7multi: SerialReceiveThread()")
     while True: self.kiss.processReceivedBytes(self.getFrame())
