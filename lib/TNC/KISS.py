@@ -4,6 +4,7 @@ from . import AX25
 
 # Class for KISS protocol implementation.
 # https://en.wikipedia.org/wiki/KISS_(amateur_radio_protocol)
+# https://www.ka9q.net/papers/kiss.html
 class KISS:
   def __init__(self, config, section="KISS"):
     self.FEND = 0xC0 # Frame End
@@ -41,11 +42,15 @@ class KISS:
     while True:
       pos = framebuf.find(self.FESC)
       if pos < 0: break # No escaped characters to translate.
-      if pos + 1 >= len(framebuf): return False # protocol violation (frame must not end with FESC)
+      if pos + 1 >= len(framebuf):
+        logging.debug("KISS: Protocol Violation: Frame must not end with FESC")
+        return False
       bval = framebuf[pos + 1]
       if bval == self.TFEND: bval = self.FEND
       elif bval == self.TFESC: bval = self.FESC
-      else: return False # protocol violation (illegal byte after FESC)
+      else:
+        logging.debug("KISS: Protocol Violation: Illegal byte after FESC")
+        return False
       framebuf = bval.to_bytes(1, byteorder="little") + framebuf[2:]
     if len(framebuf) > 0: self.ax25.processReceivedFrame(framebuf)
     return True

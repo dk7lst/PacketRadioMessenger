@@ -18,4 +18,4 @@ class SerialBase:
     return self.ser.read_until(expected=b"\n", size=1000).decode("ascii")
 
   def getFrame(self):
-    return self.ser.read_until(expected=b"\xC0", size=1000)
+    return self.ser.read_until(expected=b"\xC0", size=2048)
