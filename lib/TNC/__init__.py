@@ -1,7 +1,7 @@
 import logging # https://docs.python.org/3/howto/logging.html
-from .DummyTNC import DummyTNC
-from .KenwoodTNC import KenwoodTNC
-from .TNC7multi import TNC7multi
+from .Drivers.DummyTNC import DummyTNC
+from .Drivers.KenwoodTNC import KenwoodTNC
+from .Drivers.TNC7multi import TNC7multi
 
 # Class for access to Terminal Node Controller (TNC)
 class TNC:

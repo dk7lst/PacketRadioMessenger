@@ -1,5 +1,5 @@
 import logging # https://docs.python.org/3/howto/logging.html
-from .SerialBase import SerialBase
+from ..SerialBase import SerialBase
 
 # Class for TNC7multi TNC
 class TNC7multi(SerialBase):

@@ -45,7 +45,7 @@ logging.basicConfig(filename=config.getString("general", "logfile", "PacketRadio
 logging.info("APP START")
 
 callsign = config.getCallsign()
-if len(callsign) == 0:
+if len(callsign) == 0 or callsign == "CHANGEME":
   print("Please set callsign in config file!")
   exit(1)
 

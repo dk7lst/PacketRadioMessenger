@@ -1,5 +1,5 @@
 [general]
-callsign=?
+callsign=CHANGEME
 logfile=PacketRadioMessenger.log
 loglevel=INFO
 
