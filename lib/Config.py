@@ -19,4 +19,4 @@ class Config(configparser.ConfigParser):
     return self.getboolean(section, key, fallback=default)
 
   def getCallsign(self):
-    return self.getString("general", "callsign", "")
+    return self.getString("general", "callsign", "").upper()

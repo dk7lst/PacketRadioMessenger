@@ -3,7 +3,7 @@ from .Drivers.DummyTNC import DummyTNC
 from .Drivers.KenwoodTNC import KenwoodTNC
 from .Drivers.TNC7multi import TNC7multi
 
-# Class for access to Terminal Node Controller (TNC)
+# Class for access to Terminal Node Controller (TNC).
 class TNC:
   def __init__(self, config):
     logging.debug("Init class TNC")
