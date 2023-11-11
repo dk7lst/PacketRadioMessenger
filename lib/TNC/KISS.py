@@ -27,6 +27,7 @@ class KISS:
 
   def processReceivedFrame(self, framebuf):
     lib.logBuffer("KISS: processReceivedFrame()", framebuf)
+    if len(framebuf) == 0: return True # Empty frames are allowed but to be ignored.
     if framebuf[0] != self.FEND:
       logging.debug("KISS: Protocol Violation: No valid/complete frame (not starting with FEND)")
       return False
@@ -39,18 +40,24 @@ class KISS:
       return False
 
     framebuf = framebuf[2:] # Remove frame delimiter and command
+
+    # Process escaping:
     while True:
       pos = framebuf.find(self.FESC)
       if pos < 0: break # No escaped characters to translate.
       if pos + 1 >= len(framebuf):
         logging.debug("KISS: Protocol Violation: Frame must not end with FESC")
         return False
+
       bval = framebuf[pos + 1]
       if bval == self.TFEND: bval = self.FEND
       elif bval == self.TFESC: bval = self.FESC
       else:
         logging.debug("KISS: Protocol Violation: Illegal byte after FESC")
         return False
+
       framebuf = bval.to_bytes(1, byteorder="little") + framebuf[2:]
+
+    # Send frame to AX.25 decoder if non-empty:
     if len(framebuf) > 0: self.ax25.processReceivedFrame(framebuf)
     return True
