@@ -9,13 +9,23 @@ enabled=False
 [KenwoodTNC]
 enabled=False
 device=/dev/ttyUSB0
-portbaud=9600
+devicebaud=9600
 bytesize=8
 parity=N
+stopbits=1
+xonxoff=False
+rtscts=False
+dsrdtr=False
+exclusive=True
 
 [TNC7multi]
 enabled=False
 device=/dev/ttyUSB0
-portbaud=115200
+devicebaud=115200
 bytesize=8
 parity=N
+stopbits=1
+xonxoff=False
+rtscts=False
+dsrdtr=False
+exclusive=True
