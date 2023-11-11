@@ -15,16 +15,25 @@ class AX25:
   def processReceivedFrame(self, frame):
     lib.logBuffer("AX25: processReceivedFrame()", frame)
 
-    addr = ""
+    addr = []
+    addrBuf = ""
     idx = 0
     while len(frame) > 0:
       bval = frame[0]
       frame = frame[1:]
-      if idx % 7 < 6: addr += chr(bval >> 1)
-      else: addr = "%s-%d;" % (addr.strip(), (bval >> 1) & 0xF) # TODO: Decode other bits
+      if idx % 7 < 6: addrBuf += chr(bval >> 1)
+      else:
+        addrBuf = addrBuf.strip()
+        ssid = (bval >> 1) & 0xF # TODO: Decode other bits
+        if ssid > 0: addrBuf += "-%d" % ssid
+        addr.append(addrBuf)
+        addrBuf = ""
       if bval & 1: break
       idx += 1
-    logging.debug('addr: "%s"' % addr)
+    if len(addr) < 2:
+      logging.debug('addr: %s' % addr)
+      return # Need at least source and destination callsigns!
+    logging.debug('From: %s To: %s Via: %s' % (addr[1], addr[0], ",".join(addr[2:])))
 
     if len(frame) < 2: return # Too short! We need control (1 byte) + protocol identifier (1 byte) + info (payload, up to 256 bytes)
     ctrl = frame[0]
