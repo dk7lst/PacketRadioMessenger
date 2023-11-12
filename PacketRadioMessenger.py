@@ -3,7 +3,7 @@ import curses # https://docs.python.org/3/howto/curses.html https://docs.python.
 import curses.textpad
 import logging # https://docs.python.org/3/howto/logging.html
 import lib.Config
-import lib.TNC
+import lib.Protocol
 
 def main(stdscr):
   stdscr.clear()
@@ -26,7 +26,9 @@ def main(stdscr):
     ch = editwin.getch()
     if ch == 27: break # ESC
     elif ch == 10: # ENTER
-      listwin.addstr(1, 1, "Test: " + tb.gather().strip())
+      msgtext = tb.gather().strip()
+      listwin.addstr(1, 1, "Test: " + msgtext)
+      prot.sendMessage(msgtext)
       tb.do_command(curses.ascii.SOH)
       tb.do_command(curses.ascii.VT)
       #editwin.clear()
@@ -49,7 +51,7 @@ if len(callsign) == 0 or callsign == "CHANGEME":
   print("Please set callsign in config file!")
   exit(1)
 
-tnc = lib.TNC.TNC(config)
+prot = lib.Protocol.Protocol(config)
 
 curses.wrapper(main)
 logging.info("APP EXIT")

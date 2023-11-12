@@ -2,6 +2,9 @@
 
 import logging # https://docs.python.org/3/howto/logging.html
 
+def toByte(value):
+  return value.to_bytes(1, byteorder="little")
+
 def logBuffer(prefix, buf):
   if logging.root.level > logging.DEBUG: return False
   debug = prefix + ": %d bytes: [" % len(buf)

@@ -12,9 +12,55 @@ class AX25:
   def __init__(self, config, section="AX25"):
     logging.debug("Init class AX25")
 
-  def processReceivedFrame(self, frame):
-    lib.logBuffer("AX25: processReceivedFrame()", frame)
+  def encodeFrame(self, msg):
+    return (self.encodeAddressList(msg["from"], msg["to"], msg["via"])
+      + b"\x03\xF0" # Control + Protocol Identifier
+      + msg["payload"])
 
+  def decodeFrame(self, frame):
+    lib.logBuffer("AX25: decodeFrame()", frame)
+
+    addr, frame = self.decodeAddressList(frame)
+    if len(addr) < 2:
+      logging.debug('AX25: Ignoring invalid packet: Need at least source and destination callsigns! (addr: %s)' % addr)
+      return False
+    logging.debug('From: %s To: %s Via: %s' % (addr[1], addr[0], ",".join(addr[2:])))
+
+    if len(frame) < 2: return False # Too short! We need control (1 byte) + protocol identifier (1 byte) + info (payload, up to 256 bytes)
+    ctrl = frame[0]
+    logging.debug('ctrl: %X Frametype: %X' % (ctrl, ctrl & 3))
+    if ctrl & 3 != 3: return False # Ignore all but unnumbered frames (U frame)
+
+    ProtocolIdentifier = frame[1] # Shouldn't be there for U-frames, but is?
+    logging.debug('Protocol Identifier (PID): %X' % ProtocolIdentifier)
+
+    payload = frame[2:]
+    logging.debug('payload: "%s"' % payload)
+
+    return {"to": addr[0], "from": addr[1], "via": addr[2:], "payload": payload}
+
+  def encodeAddress(self, callsign):
+    cs = callsign.split("-")
+    ssid = 0
+    if len(cs) > 1:
+      ssid = int(cs[1])
+      if ssid > 15: raise ValueError("SSID out of range")
+    cs = cs[0].upper()
+    if len(cs) > 6: raise ValueError("Callsign too long")
+
+    buf = b""
+    for ch in cs: buf += lib.toByte(ord(ch) << 1)
+    while len(buf) < 6: buf += lib.toByte(32 << 1)
+    buf += lib.toByte(0x60 | (ssid << 1))
+    return buf
+
+  def encodeAddressList(self, fromCallsign, toCallsign, viaCallsignList):
+    buf = self.encodeAddress(toCallsign) + self.encodeAddress(fromCallsign)
+    for via in viaCallsignList: buf += self.encodeAddress(via)
+    buf = buf[:-1] + lib.toByte(buf[-1] | 1) # mark end of callsign-list
+    return buf
+
+  def decodeAddressList(self, frame):
     addr = []
     addrBuf = ""
     idx = 0
@@ -30,18 +76,4 @@ class AX25:
         addrBuf = ""
       if bval & 1: break
       idx += 1
-    if len(addr) < 2:
-      logging.debug('addr: %s' % addr)
-      return # Need at least source and destination callsigns!
-    logging.debug('From: %s To: %s Via: %s' % (addr[1], addr[0], ",".join(addr[2:])))
-
-    if len(frame) < 2: return # Too short! We need control (1 byte) + protocol identifier (1 byte) + info (payload, up to 256 bytes)
-    ctrl = frame[0]
-    logging.debug('ctrl: %X Frametype: %X' % (ctrl, ctrl & 3))
-    if ctrl & 3 != 3: return # Ignore all but unnumbered frames (U frame)
-
-    ProtocolIdentifier = frame[1] # Shouldn't be there for U-frames, but is?
-    logging.debug('Protocol Identifier (PID): %X' % ProtocolIdentifier)
-
-    payload = frame[2:]
-    logging.debug('payload: "%s"' % payload)
+    return addr, frame

@@ -20,44 +20,72 @@ class KISS:
   def processReceivedBytes(self, buf):
     lib.logBuffer("KISS: processReceivedBytes()", buf)
     for bval in buf:
+      self.framebuf += lib.toByte(bval)
       if bval == self.FEND:
-        self.processReceivedFrame(self.framebuf)
-        self.reset()
-      self.framebuf += bval.to_bytes(1, byteorder="little")
+        self.decodeFrame(self.framebuf)
+        self.framebuf = lib.toByte(bval)
 
-  def processReceivedFrame(self, framebuf):
-    lib.logBuffer("KISS: processReceivedFrame()", framebuf)
-    if len(framebuf) == 0: return True # Empty frames are allowed but to be ignored.
-    if framebuf[0] != self.FEND:
-      logging.debug("KISS: Protocol Violation: No valid/complete frame (not starting with FEND)")
+  def encodeFrame(self, cmd, data=None):
+    return lib.toByte(self.FEND) + lib.toByte(cmd) + (self.escape(data) if data!=None else b"") + lib.toByte(self.FEND)
+
+  def decodeFrame(self, frame):
+    lib.logBuffer("KISS: decodeFrame()", frame)
+
+    if len(frame) == 0: return True # Empty frames are allowed but to be ignored.
+
+    if frame[0] != self.FEND:
+      logging.debug("KISS: Protocol Violation: Frame not starting with FEND")
       return False
-    if len(framebuf) < 2: return True # Empty frames are allowed but to be ignored.
-    if framebuf[1] & 0x0F != 0:
+
+    if frame[-1] != self.FEND:
+      logging.debug("KISS: Protocol Violation: Frame not ending with FEND")
+      return False
+
+    if len(frame) <= 2: return True # Empty frames are allowed but to be ignored.
+
+    if frame[1] & 0x0F != 0:
       logging.debug("KISS: Protocol Violation: TNC only allowed to send data frames to host")
       return False
-    if framebuf[1] >> 4 != 0:
+
+    if frame[1] >> 4 != 0:
       logging.warning("KISS: Only 1 TNC supported at the moment, ignoring other channels.")
       return False
 
-    framebuf = framebuf[2:] # Remove frame delimiter and command
-
-    # Process escaping:
-    while True:
-      pos = framebuf.find(self.FESC)
-      if pos < 0: break # No escaped characters to translate.
-      if pos + 1 >= len(framebuf):
-        logging.debug("KISS: Protocol Violation: Frame must not end with FESC")
-        return False
-
-      bval = framebuf[pos + 1]
-      if bval == self.TFEND: bval = self.FEND
-      elif bval == self.TFESC: bval = self.FESC
-      else:
-        logging.debug("KISS: Protocol Violation: Illegal byte after FESC")
-        return False
-
-      framebuf = bval.to_bytes(1, byteorder="little") + framebuf[2:]
+    frame = self.unescape(frame[2:-1]) # Remove both frame delimiters and command, then unescape special bytes
 
     # Send frame to AX.25 decoder if non-empty:
-    if len(framebuf) > 0: self.ax25.processReceivedFrame(framebuf)
-    return True
+    return self.ax25.decodeFrame(frame) if len(frame) > 0 else False
+
+  def encodeMessage(self, msg):
+    return self.encodeFrame(0x00, self.ax25.encodeFrame(msg))
+
+  def leaveKissMode(self):
+    return self.encodeFrame(0xFF)
+
+  def escape(self, payload):
+    buf = b""
+    for bval in payload:
+      if bval == self.FEND: buf += lib.toByte(self.FESC) + lib.toByte(self.TFEND)
+      elif bval == self.FESC: buf += lib.toByte(self.FESC) + lib.toByte(self.TFESC)
+      else: buf += lib.toByte(bval)
+    return buf
+
+  def unescape(self, payload):
+    buf = b""
+    idx = 0
+    while idx < len(payload):
+      bval = payload[idx]
+      idx += 1
+      if bval == self.FESC:
+        if idx == len(payload):
+          logging.debug("KISS: unescape(): Protocol Violation: Frame must not end with FESC")
+          return None
+        bval = payload[idx]
+        idx += 1
+        if bval == self.TFEND: bval = self.FEND
+        elif bval == self.TFESC: bval = self.FESC
+        else:
+          logging.debug("KISS: unescape(): Protocol Violation: Illegal byte 0x%X after FESC at index %d" % (bval, idx))
+          return None
+      buf += lib.toByte(bval)
+    return buf
