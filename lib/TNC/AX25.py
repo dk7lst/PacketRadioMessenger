@@ -23,13 +23,16 @@ class AX25:
     addr, frame = self.decodeAddressList(frame)
     if len(addr) < 2:
       logging.debug('AX25: Ignoring invalid packet: Need at least source and destination callsigns! (addr: %s)' % addr)
-      return False
+      return None
     logging.debug('From: %s To: %s Via: %s' % (addr[1], addr[0], ",".join(addr[2:])))
 
-    if len(frame) < 2: return False # Too short! We need control (1 byte) + protocol identifier (1 byte) + info (payload, up to 256 bytes)
+    if len(frame) < 2: # We need control (1 byte) + protocol identifier (1 byte) + info (payload, up to 256 bytes)
+      logging.debug('AX25: Frame too short! No Ctrl + PID!')
+      return None
+
     ctrl = frame[0]
     logging.debug('ctrl: %X Frametype: %X' % (ctrl, ctrl & 3))
-    if ctrl & 3 != 3: return False # Ignore all but unnumbered frames (U frame)
+    if ctrl & 3 != 3: return None # Ignore all but unnumbered frames (U frame)
 
     ProtocolIdentifier = frame[1] # Shouldn't be there for U-frames, but is?
     logging.debug('Protocol Identifier (PID): %X' % ProtocolIdentifier)

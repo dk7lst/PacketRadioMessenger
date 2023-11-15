@@ -17,12 +17,13 @@ class KISS:
   def reset(self):
     self.framebuf = bytes()
 
-  def processReceivedBytes(self, buf):
+  def processReceivedBytes(self, buf, rxMsgQueue):
     lib.logBuffer("KISS: processReceivedBytes()", buf)
     for bval in buf:
       self.framebuf += lib.toByte(bval)
       if bval == self.FEND:
-        self.decodeFrame(self.framebuf)
+        msg = self.decodeFrame(self.framebuf)
+        if msg != None: rxMsgQueue.put(msg)
         self.framebuf = lib.toByte(bval)
 
   def encodeFrame(self, cmd, data=None):
@@ -31,25 +32,25 @@ class KISS:
   def decodeFrame(self, frame):
     lib.logBuffer("KISS: decodeFrame()", frame)
 
-    if len(frame) == 0: return True # Empty frames are allowed but to be ignored.
+    if len(frame) == 0: return None # Empty frames are allowed but to be ignored.
 
     if frame[0] != self.FEND:
       logging.debug("KISS: Protocol Violation: Frame not starting with FEND")
-      return False
+      return None
 
     if frame[-1] != self.FEND:
       logging.debug("KISS: Protocol Violation: Frame not ending with FEND")
-      return False
+      return None
 
-    if len(frame) <= 2: return True # Empty frames are allowed but to be ignored.
+    if len(frame) <= 2: return None # Empty frames are allowed but to be ignored.
 
     if frame[1] & 0x0F != 0:
       logging.debug("KISS: Protocol Violation: TNC only allowed to send data frames to host")
-      return False
+      return None
 
     if frame[1] >> 4 != 0:
       logging.warning("KISS: Only 1 TNC supported at the moment, ignoring other channels.")
-      return False
+      return None
 
     frame = self.unescape(frame[2:-1]) # Remove both frame delimiters and command, then unescape special bytes
 

@@ -1,5 +1,6 @@
 # General Tools & Helpers
 
+import datetime
 import logging # https://docs.python.org/3/howto/logging.html
 
 def toByte(value):
@@ -12,3 +13,6 @@ def logBuffer(prefix, buf):
   debug += " ]"
   logging.debug(debug)
   return True
+
+def newId():
+  return datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S%f")

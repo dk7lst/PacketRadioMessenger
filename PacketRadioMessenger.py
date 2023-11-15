@@ -4,30 +4,48 @@ import curses.textpad
 import logging # https://docs.python.org/3/howto/logging.html
 import lib.Config
 import lib.Protocol
+import lib.MessagePad
 
 def main(stdscr):
   stdscr.clear()
   stdscr.refresh()
 
-  listwin = curses.newwin(curses.LINES - 3, curses.COLS, 0, 0) # height, width, begin_y, begin_x
+  # Define colors:
+  curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+  curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+
+  # Create upper window displaying the message timeline:
+  listwin = stdscr.subwin(curses.LINES - 3, curses.COLS, 0, 0) # height, width, begin_y, begin_x
   listwin.border()
   listwin.addstr(0, 2, "[Messages]")
   listwin.refresh()
 
-  inputwin = curses.newwin(3, curses.COLS, curses.LINES - 3, 0)
+  # Create lower window to input new messages:
+  inputwin = stdscr.subwin(3, curses.COLS, curses.LINES - 3, 0)
   inputwin.border()
   inputwin.addstr(0, 2, "[Enter Message]")
   inputwin.refresh()
 
-  editwin = curses.newwin(1, curses.COLS - 2, curses.LINES - 2, 1)
+  # Create edit window inside lower window:
+  editwin = inputwin.subwin(1, curses.COLS - 2, curses.LINES - 2, 1)
+  editwin.timeout(250) # set timeout for getch()
   tb = curses.textpad.Textbox(editwin, insert_mode=True)
-  #tb.edit()
+
+  # Create virtual pad with actual timeline to be displayed inside upper window.
+  # Can hold more lines than actual fit on the screen so user scan scroll up/down.
+  listpad = curses.newpad(config.getInt("ui", "messagelines", 100), curses.COLS - 2)
+
   while True:
+    if mpad.needsUpdate():
+      # Render timeline to curses-pad and redraw screen:
+      #y, x = curses.getsyx()
+      mpad.render(listpad)
+      listpad.refresh(0, 0, 1, 1, curses.LINES - 5, curses.COLS - 1) # pad_y, pad_x, screen_y1, screen_x1, screen_y2, screen_x2
+      #curses.setsyx(y, x)
     ch = editwin.getch()
     if ch == 27: break # ESC
     elif ch == 10: # ENTER
       msgtext = tb.gather().strip()
-      listwin.addstr(1, 1, "Test: " + msgtext)
       prot.sendMessage(msgtext)
       tb.do_command(curses.ascii.SOH)
       tb.do_command(curses.ascii.VT)
@@ -51,7 +69,8 @@ if len(callsign) == 0 or callsign == "CHANGEME":
   print("Please set callsign in config file!")
   exit(1)
 
-prot = lib.Protocol.Protocol(config)
+mpad = lib.MessagePad.MessagePad(config)
+prot = lib.Protocol.Protocol(config, mpad)
 
 curses.wrapper(main)
 logging.info("APP EXIT")

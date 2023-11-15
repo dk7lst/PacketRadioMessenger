@@ -5,13 +5,18 @@ from ..AX25 import AX25
 
 # Class for dummy TNC for testing.
 class DummyTNC:
-  def __init__(self, config, section):
+  def __init__(self, config, section, rxMsgQueue):
     logging.debug("Init class DummyTNC")
+    self.rxMsgQueue = rxMsgQueue
 
     self.runTests(config, section) # Perform some self-tests
 
     self.kiss = KISS(config, section)
-    self.kiss.processReceivedBytes(b"\xC0\x00\x88\x96\x6E\x98\xA6\xA8\x60\x88\x96\x6E\x98\xA6\xA8\xEF\x03\xF0\x54\x65\x73\x74\x0D\xC0")
+    self.kiss.processReceivedBytes(b"\xC0\x00\x88\x96\x6E\x98\xA6\xA8\x60\x88\x96\x6E\x98\xA6\xA8\xEF\x03\xF0\x54\x65\x73\x74\x0D\xC0", rxMsgQueue)
+
+  def sendMessage(self, msg):
+    logging.debug('DummyTNC: sendMessage(): %s' % msg)
+    self.rxMsgQueue.put({"to": msg["from"], "from": msg["to"], "via": msg["via"].reverse(), "payload": msg["payload"]})
 
   def runTests(self, config, section):
     ax25 = AX25(config, section)
