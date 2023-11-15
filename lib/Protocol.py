@@ -1,7 +1,7 @@
 import _thread
 import queue # https://docs.python.org/3/library/queue.html
 import logging # https://docs.python.org/3/howto/logging.html
-import lib.TNC
+import lib.tnc
 
 # Class for messenger application protocol implementation.
 class Protocol:
@@ -10,7 +10,7 @@ class Protocol:
     self.msgpad = msgpad
     self.txMsgQueue = queue.SimpleQueue()
     self.rxMsgQueue = queue.SimpleQueue()
-    self.tnc = lib.TNC.TNC(config, self.txMsgQueue, self.rxMsgQueue)
+    self.tnc = lib.tnc.TNC(config, self.txMsgQueue, self.rxMsgQueue)
     _thread.start_new_thread(self.ProtocolThread, ())
 
   def sendMessage(self, msgtext):

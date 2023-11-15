@@ -28,7 +28,7 @@ def main(stdscr):
 
   # Create edit window inside lower window:
   editwin = inputwin.subwin(1, curses.COLS - 2, curses.LINES - 2, 1)
-  editwin.timeout(250) # set timeout for getch()
+  editwin.timeout(250) # set timeout for getch() in ms.
   tb = curses.textpad.Textbox(editwin, insert_mode=True)
 
   # Create virtual pad with actual timeline to be displayed inside upper window.
