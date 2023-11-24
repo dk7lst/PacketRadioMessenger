@@ -59,7 +59,8 @@ class AX25:
 
   def encodeAddressList(self, fromCallsign, toCallsign, viaCallsignList):
     buf = self.encodeAddress(toCallsign) + self.encodeAddress(fromCallsign)
-    for via in viaCallsignList: buf += self.encodeAddress(via)
+    for via in viaCallsignList:
+      if len(via) > 0: buf += self.encodeAddress(via)
     buf = buf[:-1] + lib.toByte(buf[-1] | 1) # mark end of callsign-list
     return buf
 

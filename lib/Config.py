@@ -23,3 +23,6 @@ class Config(configparser.ConfigParser):
 
   def getDefaultDestination(self):
     return self.getString("general", "DefaultDestination", "PRCHAT").upper()
+
+  def getDefaultPath(self):
+    return self.getString("general", "DefaultPath", "").upper().split(",")
