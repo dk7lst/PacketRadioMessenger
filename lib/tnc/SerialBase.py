@@ -24,6 +24,7 @@ class SerialBase:
     return self.ser.read_until(expected=b"\n", size=1000).decode("ascii")
 
   def sendLine(self, str):
+    logging.debug('SerialBase:sendLine(): "%s"' % str)
     return self.ser.write(str.encode("ascii") + b"\r\n")
 
   def getFrame(self):

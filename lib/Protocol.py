@@ -14,7 +14,7 @@ class Protocol:
     _thread.start_new_thread(self.ProtocolThread, ())
 
   def sendMessage(self, msgtext):
-    msg = {"id": lib.newId(), "to": "TO", "from": self.config.getCallsign(), "via": [], "text": msgtext}
+    msg = {"id": lib.newId(), "to": self.config.getDefaultDestination(), "from": self.config.getCallsign(), "via": [], "text": msgtext}
     self.msgpad.addMessage(msg, True)
     msg["payload"] = b"MSG " + msgtext.encode("utf-8") # TODO: Msg-Encoding!
     self.txMsgQueue.put(msg)

@@ -1,3 +1,4 @@
+import _thread
 import logging # https://docs.python.org/3/howto/logging.html
 from ..SerialBase import SerialBase
 from ..KISS import KISS
@@ -19,4 +20,7 @@ class KenwoodTNC(SerialBase):
 
   def SerialReceiveThread(self, rxMsgQueue):
     logging.debug("KenwoodTNC: SerialReceiveThread()")
+    self.sendLine("") # Clear buffer
+    self.sendLine("kiss on") # Enable KISS-mode
+    self.sendLine("restart") # Restart to KISS-mode
     while True: self.kiss.processReceivedBytes(self.getFrame(), rxMsgQueue)

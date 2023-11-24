@@ -1,5 +1,6 @@
 [general]
 callsign=CHANGEME
+defaultdestination=PRCHAT
 logfile=PacketRadioMessenger.log
 loglevel=INFO
 

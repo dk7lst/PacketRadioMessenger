@@ -20,3 +20,6 @@ class Config(configparser.ConfigParser):
 
   def getCallsign(self):
     return self.getString("general", "callsign", "").upper()
+
+  def getDefaultDestination(self):
+    return self.getString("general", "DefaultDestination", "PRCHAT").upper()

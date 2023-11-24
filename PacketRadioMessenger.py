@@ -1,6 +1,7 @@
 #!/bin/python3
 import curses # https://docs.python.org/3/howto/curses.html https://docs.python.org/3/library/curses.html
 import curses.textpad
+import argparse # https://docs.python.org/3/library/argparse.html
 import logging # https://docs.python.org/3/howto/logging.html
 import lib.Config
 import lib.Protocol
@@ -53,8 +54,14 @@ def main(stdscr):
       listwin.refresh()
     else: tb.do_command(ch)
 
+# Command line parsing:
+parser = argparse.ArgumentParser(prog="PacketRadioMessenger",
+  description="Simple messenger for chatting via ham-radio packet radio.")
+parser.add_argument("-c", "--conf", default="PacketRadioMessenger.ini", help="Specify config file.")
+args = parser.parse_args()
+
 # Load config file:
-config = lib.Config.Config("PacketRadioMessenger.ini")
+config = lib.Config.Config(args.conf)
 
 # Initialize logger:
 loglevel = getattr(logging, config.getString("general", "loglevel", "WARNING").upper(), None)
